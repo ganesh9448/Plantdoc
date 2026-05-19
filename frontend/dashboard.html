@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="PlantDoc — Free AI-powered plant leaf disease detection. Upload a leaf photo to get instant disease diagnosis and treatment recommendations." />
+  <title>PlantDoc · Leaf Disease Detection</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .lang-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-wrap: wrap;
+    }
+    .lang-bar-label {
+      font-size: 11px; color: var(--cream); opacity: 0.55;
+      font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-right: 4px;
+    }
+    #langSelector { display: flex; gap: 4px; flex-wrap: wrap; }
+    .lang-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: var(--cream); opacity: 0.7; border-radius: 20px; padding: 4px 10px;
+      font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.12); opacity: 1; }
+    .lang-btn.active {
+      background: var(--green-500); border-color: var(--green-400);
+      color: #fff; opacity: 1; font-weight: 600;
+    }
+    .open-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+      color: #4ade80; border-radius: 20px; padding: 4px 12px;
+      font-size: 11px; font-weight: 600;
+    }
+    .about-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px; max-width: 680px;
+    }
+    .about-card h2 { margin-bottom: 16px; color: var(--cream); }
+    .about-card p  { color: var(--cream); opacity: 0.8; margin-bottom: 20px; line-height: 1.7; }
+    .about-list    { list-style: none; padding: 0; margin: 0 0 24px 0; }
+    .about-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      color: var(--cream); opacity: 0.85; font-size: 14px;
+    }
+    .about-list li:last-child { border-bottom: none; }
+    .about-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .github-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-500); color: #fff; border-radius: 8px;
+      padding: 10px 20px; text-decoration: none; font-weight: 600;
+      font-size: 14px; transition: background 0.2s;
+    }
+    .github-link:hover { background: var(--green-400); }
+
+    /* ── System Status ── */
+    .status-panel {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-bottom: 2rem;
+    }
+    .status-panel-title {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.6px;
+      text-transform: uppercase; color: var(--cream); opacity: 0.5;
+      margin-bottom: 16px;
+    }
+    .status-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+    }
+    .status-item {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+      background: #6b7280;
+    }
+    .status-dot.online  { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.6); animation: pulse-dot 2s infinite; }
+    .status-dot.offline { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.5); }
+    .status-dot.loading { background: #facc15; animation: pulse-dot 1s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.45} }
+    .status-info { flex: 1; min-width: 0; }
+    .status-name  { font-size: 13px; font-weight: 600; color: var(--cream); opacity: 0.9; }
+    .status-value { font-size: 11px; color: var(--cream); opacity: 0.5; margin-top: 2px; }
+
+    /* Sidebar live indicator */
+    .sidebar-status {
+      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sidebar-status-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #6b7280; flex-shrink: 0;
+    }
+    .sidebar-status-dot.online  { background: #4ade80; animation: pulse-dot 2s infinite; }
+    .sidebar-status-dot.offline { background: #f87171; }
+    .sidebar-status-dot.loading { background: #facc15; animation: pulse-dot 1s infinite; }
+    .sidebar-status-text { font-size: 11px; color: var(--cream); opacity: 0.6; }
+    .sidebar-status-gemini { font-size: 10px; color: var(--cream); opacity: 0.4; margin-left: auto; }
+  </style>
+</head>
+<body class="dashboard-body">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">🌿</div>
+        <div class="sidebar-brand-text">
+          PlantDoc
+          <small>Leaf Disease Detection</small>
+        </div>
+      </div>
+    </div>
+    <div class="lang-bar">
+      <span class="lang-bar-label" data-i18n="language">Language</span>
+      <div id="langSelector"></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu</div>
+      <div class="nav-item active" data-section="home">
+        <span class="nav-icon">⊞</span>
+        <span data-i18n="navHome">Home</span>
+      </div>
+      <div class="nav-item" data-section="upload">
+        <span class="nav-icon">🔬</span>
+        <span data-i18n="navUpload">Analyze Leaf</span>
+        <span class="nav-badge">AI</span>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-item" data-section="about">
+        <span class="nav-icon">ℹ</span>
+        <span data-i18n="navAbout">About</span>
+      </div>
+    </nav>
+    <div class="sidebar-status" id="sidebarStatus">
+      <div class="sidebar-status-dot loading" id="sidebarDot"></div>
+      <span class="sidebar-status-text" id="sidebarStatusText">Checking...</span>
+      <span class="sidebar-status-gemini" id="sidebarGeminiText"></span>
+    </div>
+    <div class="sidebar-footer">
+      <div class="open-badge">✦ Open Source · MIT</div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h2 id="topbarTitle"    data-i18n="topbarHomeTitle">Dashboard</h2>
+        <p  id="topbarSubtitle" data-i18n="topbarHomeSubtitle">Welcome to PlantDoc</p>
+      </div>
+      <div class="topbar-right">
+        <span class="open-badge" style="font-size:10px;">🌿 Free to Use</span>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- HOME -->
+      <section class="page-section active" id="section-home">
+        <div class="hero-section">
+          <div class="hero-badge" data-i18n="heroBadge">🌱 Free &amp; Open Source</div>
+          <h1 class="hero-title">
+            <span data-i18n="heroTitle">Leaf Disease</span><br>
+            <em data-i18n="heroTitleEm">Detection System</em>
+          </h1>
+          <p class="hero-description" data-i18n="heroDesc">
+            Upload a plant leaf photo and our AI will identify diseases instantly — no login required, completely free.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg"   data-goto="upload" data-i18n="heroAnalyze">⬆ Analyze a Leaf</button>
+            <button class="btn btn-secondary btn-lg" data-goto="about"  data-i18n="heroLearnMore">How It Works</button>
+          </div>
+        </div>
+
+        <div class="status-panel" id="statusPanel">
+          <div class="status-panel-title">⬤ System Status</div>
+          <div class="status-grid">
+            <div class="status-item">
+              <div class="status-dot loading" id="dotBackend"></div>
+              <div class="status-info">
+                <div class="status-name">Backend API</div>
+                <div class="status-value" id="valBackend">Checking…</div>
+              </div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot loading" id="dotCNN"></div>
+              <div class="status-info">
+                <div class="status-name">Disease CNN Model</div>
+                <div class="status-value" id="valCNN">Checking…</div>
+              </div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot loading" id="dotYOLO"></div>
+              <div class="status-info">
+                <div class="status-name">YOLO Leaf Detector</div>
+                <div class="status-value" id="valYOLO">Checking…</div>
+              </div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot loading" id="dotGemini"></div>
+              <div class="status-info">
+                <div class="status-name">Gemini AI</div>
+                <div class="status-value" id="valGemini">Checking…</div>
+              </div>
+            </div>
+            <div class="status-item">
+              <div class="status-dot loading" id="dotClasses"></div>
+              <div class="status-info">
+                <div class="status-name">Disease Classes</div>
+                <div class="status-value" id="valClasses">Checking…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row mb-8">
+          <div class="stat-card">
+            <div class="stat-icon">🌿</div>
+            <div class="stat-info">
+              <div class="stat-value">38+</div>
+              <div class="stat-label" data-i18n="statCategories">Disease Categories</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-info">
+              <div class="stat-value">&lt;2s</div>
+              <div class="stat-label" data-i18n="statTime">Avg. Prediction Time</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔓</div>
+            <div class="stat-info">
+              <div class="stat-value" data-i18n="statFree">Free to Use</div>
+              <div class="stat-label" data-i18n="statForever">Forever</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-cards mb-8">
+          <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3 data-i18n="feat1Title">AI-Powered Detection</h3>
+            <p data-i18n="feat1Desc">Deep learning CNN model for accurate disease identification across 38+ plant diseases.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 data-i18n="feat2Title">Fast Results</h3>
+            <p data-i18n="feat2Desc">Get disease predictions in under 2 seconds.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💊</div>
+            <h3 data-i18n="feat3Title">Treatment Advice</h3>
+            <p data-i18n="feat3Desc">Get pesticide, organic, and prevention recommendations tailored to the detected disease.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔓</div>
+            <h3 data-i18n="feat4Title">No Login Needed</h3>
+            <p data-i18n="feat4Desc">Completely open source and free. No account, no data stored — just upload and get results.</p>
+          </div>
+        </div>
+
+        <div class="how-it-works">
+          <h2 data-i18n="howTitle">How It Works</h2>
+          <div class="steps-grid">
+            <div class="step-item">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 data-i18n="step1Title">Upload a Leaf Image</h4>
+                <p data-i18n="step1Desc">Take a photo of an affected leaf or upload an existing image (JPG, PNG, WebP).</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 data-i18n="step2Title">AI Analyzes the Image</h4>
+                <p data-i18n="step2Desc">Our CNN model classifies the disease with a confidence score.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4 data-i18n="step3Title">Get Treatment Plan</h4>
+                <p data-i18n="step3Desc">Receive pesticide, organic treatment, prevention steps, and video resources.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- UPLOAD / PREDICT -->
+      <section class="page-section" id="section-upload">
+        <div class="section-title"    data-i18n="uploadTitle">Analyze Leaf Disease</div>
+        <div class="section-subtitle" data-i18n="uploadSubtitle">Upload a clear photo of a plant leaf for instant analysis</div>
+
+        <div class="upload-layout">
+          <div>
+            <div id="uploadZone" class="upload-zone" role="button" tabindex="0" aria-label="Upload leaf image">
+              <span class="upload-icon">🌿</span>
+              <h3 data-i18n="dropTitle">Drop your leaf image here</h3>
+              <p  data-i18n="dropSub">or click to browse from your device</p>
+              <span class="allowed-formats" data-i18n="dropFormats">JPG · PNG · WebP · max 10 MB</span>
+            </div>
+            <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp" aria-label="File input" />
+
+            <div id="previewBox" class="image-preview-box" style="display:none">
+              <img id="previewImg" src="" alt="Selected leaf image" />
+              <button id="removeImageBtn" class="preview-remove" title="Remove image" aria-label="Remove image">✕</button>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:16px">
+              <button id="predictBtn" class="btn btn-primary btn-lg" disabled style="flex:1" data-i18n="analyzeBtn">
+                🔬 Analyze Disease
+              </button>
+            </div>
+
+            <div class="alert alert-info" style="margin-top:16px; display:block; font-size:13px;">
+              <span data-i18n="uploadTip">ℹ️ Make sure the image shows a single leaf clearly.</span>
+            </div>
+          </div>
+
+          <div class="result-panel" role="region" aria-live="polite" aria-label="Analysis results">
+            <div id="loadingState" class="loading-state">
+              <div class="loading-ring"></div>
+              <span data-i18n="analyzing">Analyzing your leaf image…</span>
+            </div>
+
+            <div id="resultPlaceholder" class="result-placeholder">
+              <span class="placeholder-icon">🔬</span>
+              <p data-i18n="resultPlaceholder">Results will appear here after you upload and analyze an image.</p>
+            </div>
+
+            <div id="resultContent" class="result-content">
+              <div class="card-header" style="margin-bottom:16px">
+                <div class="card-title" data-i18n="resultTitle">Analysis Result</div>
+              </div>
+              <div class="disease-badge detected" style="margin-bottom:16px">
+                🦠 <span id="diseaseName">–</span>
+              </div>
+              <div class="confidence-bar">
+                <label>
+                  <span data-i18n="confidence">Confidence</span>
+                  <strong id="confLabel" style="color:var(--green-200)">–</strong>
+                </label>
+                <div class="confidence-track">
+                  <div class="confidence-fill" id="confFill"></div>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="treatment-section">
+                <div class="treatment-header">
+                  <span class="treat-icon">💊</span>
+                  <h4 data-i18n="pesticideTitle">Pesticide Recommendation</h4>
+                </div>
+                <div class="treatment-body" id="pesticideContent"><p class="text-muted">–</p></div>
+              </div>
+              <div class="treatment-section">
+                <div class="treatment-header">
+                  <span class="treat-icon">🌱</span>
+                  <h4 data-i18n="organicTitle">Organic Treatment</h4>
+                </div>
+                <div class="treatment-body" id="organicContent"><p class="text-muted">–</p></div>
+              </div>
+              <div class="treatment-section">
+                <div class="treatment-header">
+                  <span class="treat-icon">🛡️</span>
+                  <h4 data-i18n="preventionTitle">Prevention Methods</h4>
+                </div>
+                <div class="treatment-body" id="preventionContent"><p class="text-muted">–</p></div>
+              </div>
+              <div class="youtube-section">
+                <h4 data-i18n="videoTitle">📹 Helpful Video Resources</h4>
+                <div class="youtube-links" id="youtubeLinks">
+                  <p class="text-muted" style="font-size:13px">–</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section class="page-section" id="section-about">
+        <div class="section-title"    data-i18n="aboutTitle">About PlantDoc</div>
+        <div class="section-subtitle">Open Source Plant Disease Detection</div>
+        <div class="about-card">
+          <h2>🌿 PlantDoc</h2>
+          <p data-i18n="aboutDesc">
+            PlantDoc is a free, open-source plant disease detection system built with TensorFlow and FastAPI.
+            It helps farmers, gardeners, and researchers quickly identify plant diseases from leaf photos.
+          </p>
+          <ul class="about-list">
+            <li><span class="about-icon">🧠</span><span data-i18n="aboutModel">Model: TensorFlow CNN (38+ disease classes)</span></li>
+            <li><span class="about-icon">🛡️</span><span data-i18n="aboutGatekeeper">Gatekeeper: YOLOv8 leaf detector (rejects non-leaf images)</span></li>
+            <li><span class="about-icon">⚙️</span><span data-i18n="aboutBackend">Backend: FastAPI (Python)</span></li>
+            <li><span class="about-icon">🎨</span><span data-i18n="aboutFrontend">Frontend: Pure HTML / CSS / JS</span></li>
+            <li><span class="about-icon">📄</span><span data-i18n="aboutLicense">License: MIT — Free to use, modify, and distribute</span></li>
+            <li><span class="about-icon">🔒</span><span>No login required · No data stored · No tracking</span></li>
+          </ul>
+          <a href="https://github.com/" target="_blank" rel="noopener noreferrer" class="github-link">★ Star on GitHub</a>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/upload.js"></script>
+  <script>
+    function setDot(id, state) {
+      const el = document.getElementById(id);
+      if (el) { el.className = 'status-dot ' + state; }
+    }
+    function setSidebarDot(state) {
+      const d = document.getElementById('sidebarDot');
+      if (d) d.className = 'sidebar-status-dot ' + state;
+    }
+    async function checkStatus() {
+      const base = (typeof API !== 'undefined') ? API.base : 'http://127.0.0.1:8000';
+      try {
+        const res  = await fetch(base + '/');
+        const data = await res.json();
+
+        setDot('dotBackend', 'online');
+        document.getElementById('valBackend').textContent = 'Online · v' + (data.version || '?');
+
+        setDot('dotCNN', 'online');
+        document.getElementById('valCNN').textContent = 'Loaded & ready';
+
+        const thresh = data.gatekeeper && data.gatekeeper.threshold
+          ? Math.round(data.gatekeeper.threshold * 100) + '% threshold'
+          : 'Loaded';
+        setDot('dotYOLO', 'online');
+        document.getElementById('valYOLO').textContent = thresh;
+
+        const geminiOn = data.gemini === true;
+        setDot('dotGemini', geminiOn ? 'online' : 'offline');
+        document.getElementById('valGemini').textContent = geminiOn ? 'AI active · gemini-flash-lite' : 'Unavailable — static fallback';
+
+        const classes = data.classes || 0;
+        setDot('dotClasses', classes > 0 ? 'online' : 'offline');
+        document.getElementById('valClasses').textContent = classes + ' classes loaded';
+
+        setSidebarDot('online');
+        document.getElementById('sidebarStatusText').textContent = 'All systems online';
+        document.getElementById('sidebarGeminiText').textContent = geminiOn ? 'Gemini ✓' : 'Gemini ✗';
+
+      } catch (e) {
+        ['dotBackend','dotCNN','dotYOLO','dotGemini','dotClasses'].forEach(id => setDot(id, 'offline'));
+        ['valBackend','valCNN','valYOLO','valGemini','valClasses'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = 'Cannot reach backend';
+        });
+        setSidebarDot('offline');
+        document.getElementById('sidebarStatusText').textContent = 'Backend offline';
+        document.getElementById('sidebarGeminiText').textContent = '';
+      }
+    }
+    checkStatus();
+    setInterval(checkStatus, 30000);
+  </script>
+</body>
+</html>

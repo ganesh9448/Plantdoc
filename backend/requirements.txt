@@ -1,0 +1,22 @@
+# PlantDoc — Python dependencies
+# Install with: pip install -r requirements.txt
+
+# Web framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+
+# Image processing
+pillow>=10.3.0
+numpy>=1.26.0
+
+# ML models
+ultralytics>=8.2.0
+tensorflow>=2.15.0
+tf-keras>=2.15.0
+
+# Environment
+python-dotenv>=1.0.1
+
+# Gemini AI (optional — for AI-powered recommendations)
+google-genai>=0.5.0

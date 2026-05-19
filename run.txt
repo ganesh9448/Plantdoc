@@ -1,0 +1,12 @@
+
+To Run THe Backend
+cd backend
+venv\Scripts\activate
+uvicorn app:app --reload
+
+To Run Frontend
+
+
+cd ..
+cd frontend
+python -m http.server 5500 --bind 127.0.0.1
